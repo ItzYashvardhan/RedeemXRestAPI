@@ -1,0 +1,9 @@
+name: RedeemXRestAPI
+version: '1.0'
+main: me.justlime.redeemXRestAPI.RedeemXRestAPI
+api-version: '1.21'
+authors: [ JustLime ]
+description: Parkour Event for Capital Realm
+website: https://github.com/Yashvardhan76?tab=repositories
+depend:
+  - RedeemX
