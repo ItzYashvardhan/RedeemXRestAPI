@@ -5,7 +5,7 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import me.justlime.redeemXRestAPI.models.GenerateResponse
+import me.justlime.redeemXRestAPI.models.Response
 import me.justlime.redeemXRestAPI.rxrPlugin
 
 fun Route.deleteRoute() {
@@ -19,9 +19,19 @@ fun Route.deleteRoute() {
             call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Internal Server Error", "details" to e.localizedMessage))
         }
     }
+    post("/delete/template") {
+        try {
+            val params = call.receiveParameters()
+            val result = handleTemplateDeletion(params)
+            call.respond(result)
+        } catch (e: Exception) {
+            rxrPlugin.logger.warning("An error occurred in /modify/delete/template route: ${e.message}")
+            call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Internal Server Error", "details" to e.localizedMessage))
+        }
+    }
 }
 
-fun handleCodeDeletion(params: Parameters): GenerateResponse {
+fun handleCodeDeletion(params: Parameters): Response {
     val codesToDelete = params["code"]?.split(" ") ?: emptyList()
     val templateNames = params["template"]?.split(" ") ?: emptyList()
     val deletedCodes = mutableSetOf<String>()
@@ -49,7 +59,7 @@ fun handleCodeDeletion(params: Parameters): GenerateResponse {
     }
 
     if (deletedCount == 0 && templateDeletedCount == 0) {
-        return GenerateResponse(
+        return Response(
             success = HttpStatusCode.NotFound.value,
             error = "No codes found to delete."
         )
@@ -59,8 +69,51 @@ fun handleCodeDeletion(params: Parameters): GenerateResponse {
     if (deletedCount > 0) resultMessages.add("Deleted $deletedCount code(s).")
     if (templateDeletedCount > 0) resultMessages.add("Deleted $templateDeletedCount code(s) from template(s): ${templateNames.joinToString()}.")
 
-    return GenerateResponse(
+    return Response(
         success = HttpStatusCode.OK.value,
         result = resultMessages
     )
+}
+
+fun handleTemplateDeletion(params: Parameters): Response{
+    val templateNames = params["template"]?.split(" ") ?: emptyList()
+    val deletedTemplates = mutableSetOf<String>()
+    var deletedCount = 0
+    var deltedCodeCount =0
+
+    if (templateNames.isEmpty()) {
+        return Response(
+            success = HttpStatusCode.BadRequest.value,
+            error = "No template names provided for deletion."
+        )
+    }
+    val redeemCodes = RedeemXAPI.code.getCodes().mapNotNull { RedeemXAPI.code.getCode(it) }
+
+    templateNames.forEach { templateName ->
+        if (RedeemXAPI.template.isTemplateExist(templateName)) {
+            val codesInTemplate = redeemCodes.filter { it.template.equals(templateName, ignoreCase = true) }
+            codesInTemplate.forEach { code ->
+                if (RedeemXAPI.code.deleteCode(code.code)) {
+                    deltedCodeCount++
+                }
+            }
+
+            if (RedeemXAPI.template.deleteTemplate(templateName)) {
+                deletedTemplates.add(templateName)
+                deletedCount++
+            }
+        }
+    }
+
+    return if (deletedCount > 0) {
+        Response(
+            success = HttpStatusCode.OK.value,
+            result = listOf("Deleted $deletedCount template(s): ${deletedTemplates.joinToString()} with $deltedCodeCount code(s)"),
+        )
+    } else {
+        Response(
+            success = HttpStatusCode.NotFound.value,
+            error = "No templates found to delete or templates could not be deleted."
+        )
+    }
 }

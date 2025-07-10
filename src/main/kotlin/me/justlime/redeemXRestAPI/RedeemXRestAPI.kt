@@ -3,6 +3,7 @@ package me.justlime.redeemXRestAPI
 import api.justlime.redeemcodex.RedeemXAPI
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import me.justlime.redeemXRestAPI.enums.JConfig
 import me.justlime.redeemXRestAPI.route.routeManager
 import me.justlime.redeemXRestAPI.utilities.JService
 import org.bukkit.Bukkit
@@ -28,8 +29,8 @@ class RedeemXRestAPI : JavaPlugin() {
     }
 
     private fun startRestApi() {
-        val apiPort = JService.config.getInt("port", 8080)
-        val apiHost = JService.config.getString("host")?.takeIf { it.isNotBlank() } ?: "0.0.0.0"
+        val apiPort = JService.config.getInt(JConfig.API_PORT.path, 8080)
+        val apiHost = JService.config.getString(JConfig.API_HOST.path)?.takeIf { it.isNotBlank() } ?: "0.0.0.0"
         try {
             ktorServer = embeddedServer(Netty, port = apiPort, host = apiHost) { routeManager() }.start(wait = false).engine
             logger.info("§aKtor server started on port $apiPort")

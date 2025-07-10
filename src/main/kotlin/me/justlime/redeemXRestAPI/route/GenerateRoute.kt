@@ -7,7 +7,7 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import me.justlime.redeemXRestAPI.models.GenerateResponse
+import me.justlime.redeemXRestAPI.models.Response
 import me.justlime.redeemXRestAPI.rxrPlugin
 
 fun Route.generateRoute() {
@@ -34,9 +34,7 @@ fun Route.generateRoute() {
 }
 
 
-fun handleCodeGeneration(
-    params: Parameters
-): GenerateResponse {
+fun handleCodeGeneration(params: Parameters): Response {
 
     val digit = params["digit"]?.toIntOrNull()
     val custom = params["custom"]?.split(" ")
@@ -44,7 +42,7 @@ fun handleCodeGeneration(
     val template = params["template"] ?: "DEFAULT"
 
     if (digit == null && custom == null) {
-        return GenerateResponse(
+        return Response(
             success = HttpStatusCode.BadRequest.value,
             error = "Missing required parameters: 'digit' or 'custom'"
         )
@@ -60,33 +58,32 @@ fun handleCodeGeneration(
         generatedCode.addAll(customCode)
     }
     if (generatedCode.isEmpty()) {
-        return GenerateResponse(
+        return Response(
             success = HttpStatusCode.BadGateway.value,
             error = "No codes generated."
         )
     }
     val codes = generatedCode.map { it.code }
-    return GenerateResponse(
+    RedeemXAPI.code.upsertCodes(generatedCode.toList())
+    return Response(
         success = HttpStatusCode.OK.value,
         result = codes,
     )
 }
 
-fun handleTemplateGeneration(
-    params: Parameters
-): GenerateResponse {
+fun handleTemplateGeneration(params: Parameters): Response {
     val name = params["template"]?.split(" ")
 
     val generatedTemplate = mutableSetOf<RedeemTemplate>()
     if (name == null) {
-        return GenerateResponse(
+        return Response(
             success = HttpStatusCode.BadGateway.value,
             error = "No template name provided."
         )
     }
     name.map {
         if (RedeemXAPI.template.isTemplateExist(it)) {
-            return GenerateResponse(
+            return Response(
                 success = HttpStatusCode.BadGateway.value,
                 error = "Template already exist."
             )
@@ -96,13 +93,13 @@ fun handleTemplateGeneration(
     val templates = name.map { RedeemXAPI.template.generateTemplate(it) }
     generatedTemplate.addAll(templates)
     if (generatedTemplate.isEmpty()) {
-        return GenerateResponse(
+        return Response(
             success = HttpStatusCode.BadGateway.value,
             error = "No template Generated."
         )
     }
     val template = generatedTemplate.map { it.name }
-    return GenerateResponse(
+    return Response(
         success = HttpStatusCode.OK.value,
         result = template,
     )

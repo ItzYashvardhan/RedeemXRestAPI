@@ -63,6 +63,7 @@ class ConfigManager {
             apiToken = JService.generateToken()
             configuration.set("api.token", apiToken)
         }
+        saveConfig(JFiles.CONFIG)
     }
 
     fun saveConfig(configFile: JFiles): Boolean {

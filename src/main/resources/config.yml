@@ -1,5 +1,5 @@
 api:
-  enabled: false
+  enabled: true
   token: ''
 
 server:
