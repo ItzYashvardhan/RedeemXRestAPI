@@ -1,5 +1,7 @@
+
 plugins {
     kotlin("jvm") version "2.1.10"
+    kotlin("plugin.serialization") version "2.1.10"
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
@@ -14,15 +16,17 @@ repositories {
     maven("https://oss.sonatype.org/content/groups/public/") {
         name = "sonatype"
     }
+    maven("https://jitpack.io")
 }
 dependencies {
     compileOnly("org.spigotmc:spigot-api:1.21-R0.1-SNAPSHOT")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("io.ktor:ktor-server-core:3.1.0")
-    implementation("io.ktor:ktor-server-netty:3.1.0")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.1.0")
-    implementation("io.ktor:ktor-server-content-negotiation:3.1.0")
-    compileOnly(files("C:/Users/yashv/IdeaProjects/RedeemCodeX/build/libs/RedeemCodeX-1.0-all.jar"))
+    compileOnly("com.github.ItzYashvardhan:RedeemCodeX-API:1.0.2")
+    compileOnly("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation("io.ktor:ktor-server-core:3.2.1")
+    implementation("io.ktor:ktor-server-netty:3.2.1")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.2.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    implementation("io.ktor:ktor-server-content-negotiation:3.2.1")
 }
 
 val targetJavaVersion = 8
@@ -35,7 +39,9 @@ tasks.build {
 }
 tasks.shadowJar {
     mergeServiceFiles()
-//    minimize()
+    minimize {
+        exclude(dependency("io.ktor:ktor-serialization-kotlinx-json"))
+    }
 }
 tasks.processResources {
     val props = mapOf("version" to version)

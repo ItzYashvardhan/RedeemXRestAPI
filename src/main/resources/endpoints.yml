@@ -1,0 +1,15 @@
+post-endpoints:
+    path: /redeem/{username}
+    commands:
+      - "redeem %username% SUMMER2025"
+    response:
+      status: 200
+      body: "Redeem triggered for %username%"
+
+get-endpoints:
+    path: /redeem
+    commands:
+      - "redeem SUMMER2025"
+    response:
+      status: 200
+      body: "Redeem triggered"
